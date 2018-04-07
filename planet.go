@@ -5,4 +5,5 @@ type Planet struct {
 	yPos     int
 	graphic  string
 	diameter int
+	image    string
 }

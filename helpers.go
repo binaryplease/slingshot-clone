@@ -18,3 +18,7 @@ func loadPicture(path string) (pixel.Picture, error) {
 	}
 	return pixel.PictureDataFromImage(img), nil
 }
+
+func drawPicture(path string) {
+
+}
