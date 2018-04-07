@@ -1,28 +1,21 @@
 package main
 
 import (
-	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
 	_ "image/png"
 )
 
+func main() {
+	// Run
+	pixelgl.Run(run)
+}
+
 func run() {
-	cfg := pixelgl.WindowConfig{
-		Title:  "Pixel Rocks!",
-		Bounds: pixel.R(0, 0, 1024, 768),
-		VSync:  true,
-	}
-	win, err := pixelgl.NewWindow(cfg)
-	if err != nil {
-		panic(err)
+
+	sg := NewSlingshotGame(3, 2, 800, 800)
+	for !sg.win.Closed() {
+		sg.draw(sg.win)
+		sg.win.Update()
 	}
 
-	sg := NewSlingshotGame(3)
-	for !win.Closed() {
-		sg.draw(win)
-		win.Update()
-	}
-}
-func main() {
-	pixelgl.Run(run)
 }
