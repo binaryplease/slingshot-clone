@@ -1,9 +1,8 @@
 package main
 
 type Planet struct {
-	xPos     int
-	yPos     int
-	graphic  string
-	diameter int
+	xPos     float64
+	yPos     float64
+	diameter float64
 	image    string
 }

@@ -1,8 +1,8 @@
 package main
 
 type SpaceShip struct {
-	xPos  int
-	yPos  int
-	angle int
+	xPos  float64
+	yPos  float64
+	angle float64
 	image string
 }
