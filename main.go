@@ -14,7 +14,6 @@ func run() {
 
 	sg := NewSlingshotGame(3, 2, 1000, 800)
 	for !sg.win.Closed() {
-		sg.draw()
 		sg.Update()
 		sg.win.Update()
 	}

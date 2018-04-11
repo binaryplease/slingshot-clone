@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
+	"github.com/faiface/pixel/text"
 	"golang.org/x/image/colornames"
 	"io/ioutil"
+	// "math"
 	"math/rand"
 	"time"
 )
@@ -16,12 +18,13 @@ type SlingshotGame struct {
 	planets []Planet
 	players []SlingshotPlayer
 	win     *pixelgl.Window
+	turn    int
 	// cam := pixel.IM.Scaled(camPos, camZoom).Moved(win.Bounds().Center().Sub(c amPos))
 }
 
 func (sg *SlingshotGame) Update() {
 	time.Sleep(1000 * time.Millisecond)
-
+	sg.draw()
 }
 
 func (sg *SlingshotGame) drawPicture(xPos, yPos, angle float64, path string) {
@@ -32,6 +35,7 @@ func (sg *SlingshotGame) drawPicture(xPos, yPos, angle float64, path string) {
 
 	mat := pixel.IM
 	mat = mat.Moved((sg.win.Bounds().Min))
+	// mat = mat.Rotated(pic.Bounds().Center(), 360*angle/(math.Pi))
 	mat = mat.Moved(pixel.V(xPos, yPos))
 
 	sprite := pixel.NewSprite(pic, pic.Bounds())
@@ -77,7 +81,7 @@ func NewSlingshotGame(numPlanets, numPlayers, xSize, ySize int) *SlingshotGame {
 	var planets []Planet
 	var players []SlingshotPlayer
 
-	sg := &SlingshotGame{xSize, ySize, planets, players, win}
+	sg := &SlingshotGame{xSize, ySize, planets, players, win, 0}
 
 	// Add Planets
 	for i := 0; i < numPlanets; i++ {
@@ -91,7 +95,7 @@ func NewSlingshotGame(numPlanets, numPlayers, xSize, ySize int) *SlingshotGame {
 	for i := 0; i < numPlayers; i++ {
 		xPos := rand.Float64() * float64(xSize)
 		yPos := rand.Float64() * float64(ySize)
-		sg.addPlayer(xPos, yPos, 90, shipImages[i%len(shipImages)])
+		sg.addPlayer(xPos, yPos, float64((90*i)%360), shipImages[i%len(shipImages)])
 	}
 
 	return sg
@@ -136,6 +140,19 @@ func (sg *SlingshotGame) drawShips() {
 
 // Draw the players score
 func (sg SlingshotGame) drawScore() {
+
+	face, err := loadTTF("font.ttf", 80)
+	if err != nil {
+		panic(err)
+	}
+
+	atlas := text.NewAtlas(face, text.ASCII)
+	txt := text.New(pixel.V(50, 500), atlas)
+
+	txt.Color = colornames.Lightgrey
+
+	txt.WriteString("test")
+	txt.Draw(sg.win, pixel.IM.Moved(sg.win.Bounds().Center().Sub(txt.Bounds().Center())))
 	for k, v := range sg.players {
 		//TODO display on screen, not on console
 		fmt.Println("Player " + string(k) + ": " + string(v.score) + "Points")
