@@ -24,6 +24,9 @@ func (sg *SlingshotGame) drawPicture(xPos, yPos, angle float64, path string) {
 	}
 
 	mat := pixel.IM
+	mat = mat.Moved((sg.win.Bounds().Min))
+	fmt.Println("xpos " + FloatToString(xPos))
+	fmt.Println("ypos " + FloatToString(yPos))
 	mat = mat.Moved(pixel.V(xPos, yPos))
 
 	sprite := pixel.NewSprite(pic, pic.Bounds())
