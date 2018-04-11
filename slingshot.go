@@ -7,6 +7,7 @@ import (
 	"golang.org/x/image/colornames"
 	"io/ioutil"
 	"math/rand"
+	"time"
 )
 
 type SlingshotGame struct {
@@ -15,6 +16,12 @@ type SlingshotGame struct {
 	planets []Planet
 	players []SlingshotPlayer
 	win     *pixelgl.Window
+	// cam := pixel.IM.Scaled(camPos, camZoom).Moved(win.Bounds().Center().Sub(c amPos))
+}
+
+func (sg *SlingshotGame) Update() {
+	time.Sleep(1000 * time.Millisecond)
+
 }
 
 func (sg *SlingshotGame) drawPicture(xPos, yPos, angle float64, path string) {
@@ -25,16 +32,11 @@ func (sg *SlingshotGame) drawPicture(xPos, yPos, angle float64, path string) {
 
 	mat := pixel.IM
 	mat = mat.Moved((sg.win.Bounds().Min))
-	fmt.Println("xpos " + FloatToString(xPos))
-	fmt.Println("ypos " + FloatToString(yPos))
 	mat = mat.Moved(pixel.V(xPos, yPos))
 
 	sprite := pixel.NewSprite(pic, pic.Bounds())
 	sprite.Draw(sg.win, mat)
 
-	for !sg.win.Closed() {
-		sg.win.Update()
-	}
 }
 
 func NewSlingshotGame(numPlanets, numPlayers, xSize, ySize int) *SlingshotGame {
@@ -109,8 +111,8 @@ func (sg *SlingshotGame) addPlayer(xPos, yPos, angle float64, image string) {
 }
 
 // Draw all images on the screen
-func (sg SlingshotGame) draw(win *pixelgl.Window) {
-	win.Clear(colornames.Skyblue)
+func (sg SlingshotGame) draw() {
+	sg.win.Clear(colornames.Skyblue)
 	sg.drawPlanets()
 	sg.drawShips()
 	sg.drawScore()
@@ -119,7 +121,7 @@ func (sg SlingshotGame) draw(win *pixelgl.Window) {
 // Draw the planets
 func (sg *SlingshotGame) drawPlanets() {
 	for _, v := range sg.planets {
-		fmt.Println("Drawing Planet at:" + FloatToString(v.xPos) + "" + FloatToString(v.yPos))
+		fmt.Println("Drawing Planet at:" + FloatToString(v.xPos) + " " + FloatToString(v.yPos))
 		sg.drawPicture(v.xPos, v.yPos, 0, v.image)
 	}
 }
@@ -127,6 +129,7 @@ func (sg *SlingshotGame) drawPlanets() {
 // Draw the ships
 func (sg *SlingshotGame) drawShips() {
 	for _, v := range sg.players {
+		fmt.Println("Drawing Ship at:" + FloatToString(v.ship.xPos) + " " + FloatToString(v.ship.yPos))
 		sg.drawPicture(v.ship.xPos, v.ship.yPos, v.ship.angle, v.ship.image)
 	}
 }
