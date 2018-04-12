@@ -19,12 +19,46 @@ type SlingshotGame struct {
 	players []SlingshotPlayer
 	win     *pixelgl.Window
 	turn    int
+	txt     *text.Text
 	// cam := pixel.IM.Scaled(camPos, camZoom).Moved(win.Bounds().Center().Sub(c amPos))
 }
 
 func (sg *SlingshotGame) Update() {
 	time.Sleep(1000 * time.Millisecond)
 	sg.draw()
+	//sg.getInput()
+	sg.turn = (sg.turn + 1) % len(sg.players)
+}
+
+func (sg *SlingshotGame) getInput() {
+	sg.getGeneralInput()
+	sg.getInput()
+}
+
+func (sg *SlingshotGame) getGeneralInput() {
+}
+
+func (sg *SlingshotGame) getUserInput() {
+
+	// Turn ship left
+	if sg.win.Pressed(pixelgl.KeyLeft) {
+		sg.players[sg.turn].ship.angle += 10
+	}
+
+	// Turn ship right
+	if sg.win.Pressed(pixelgl.KeyRight) {
+		sg.players[sg.turn].ship.angle -= 10
+	}
+
+	// More power
+	if sg.win.Pressed(pixelgl.KeyUp) {
+		sg.players[sg.turn].ship.power += 10
+	}
+
+	//Less power
+	if sg.win.Pressed(pixelgl.KeyDown) {
+		sg.players[sg.turn].ship.power -= 10
+	}
 }
 
 func (sg *SlingshotGame) drawPicture(xPos, yPos, angle float64, path string) {
@@ -78,10 +112,19 @@ func NewSlingshotGame(numPlanets, numPlayers, xSize, ySize int) *SlingshotGame {
 		panic(err)
 	}
 
+	//Create text for info
+	face, err := loadTTF("font.ttf", 30)
+	if err != nil {
+		panic(err)
+	}
+
+	atlas := text.NewAtlas(face, text.ASCII)
+	txt := text.New(pixel.V(50, 500), atlas)
+
 	var planets []Planet
 	var players []SlingshotPlayer
 
-	sg := &SlingshotGame{xSize, ySize, planets, players, win, 0}
+	sg := &SlingshotGame{xSize, ySize, planets, players, win, 0, txt}
 
 	// Add Planets
 	for i := 0; i < numPlanets; i++ {
@@ -109,14 +152,14 @@ func (sg *SlingshotGame) addPlanet(xPos, yPos, diameter float64, image string) {
 
 // Add a player to the game
 func (sg *SlingshotGame) addPlayer(xPos, yPos, angle float64, image string) {
-	ship := SpaceShip{xPos, yPos, angle, image}
+	ship := SpaceShip{xPos, yPos, angle, 10, image}
 	player := SlingshotPlayer{ship, 0}
 	sg.players = append(sg.players, player)
 }
 
 // Draw all images on the screen
 func (sg SlingshotGame) draw() {
-	sg.win.Clear(colornames.Skyblue)
+	sg.win.Clear(colornames.Blue)
 	sg.drawPlanets()
 	sg.drawShips()
 	sg.drawScore()
@@ -141,18 +184,17 @@ func (sg *SlingshotGame) drawShips() {
 // Draw the players score
 func (sg SlingshotGame) drawScore() {
 
-	face, err := loadTTF("font.ttf", 80)
-	if err != nil {
-		panic(err)
+	// Print Players info in respective color
+	for k, v := range sg.players {
+		if sg.turn == k {
+			sg.txt.Color = colornames.Red
+		} else {
+			sg.txt.Color = colornames.Grey
+		}
+		sg.txt.WriteString("Payer: " + string(k+1) + ": " + string(v.score) + "\n")
 	}
 
-	atlas := text.NewAtlas(face, text.ASCII)
-	txt := text.New(pixel.V(50, 500), atlas)
-
-	txt.Color = colornames.Lightgrey
-
-	txt.WriteString("test")
-	txt.Draw(sg.win, pixel.IM.Moved(sg.win.Bounds().Center().Sub(txt.Bounds().Center())))
+	sg.txt.Draw(sg.win, pixel.IM.Moved(sg.win.Bounds().Max.Sub(sg.txt.Bounds().Max)))
 	for k, v := range sg.players {
 		//TODO display on screen, not on console
 		fmt.Println("Player " + string(k) + ": " + string(v.score) + "Points")
