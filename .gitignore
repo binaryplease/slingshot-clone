@@ -1,5 +1,6 @@
 # Binaries for programs and plugins
 tags
+slingshot-clone
 *.exe
 *.dll
 *.so
