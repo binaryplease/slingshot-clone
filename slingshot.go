@@ -1,13 +1,12 @@
 package main
 
 import (
-	"fmt"
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
 	"github.com/faiface/pixel/text"
 	"golang.org/x/image/colornames"
 	"io/ioutil"
-	// "math"
+	"math"
 	"math/rand"
 	"time"
 )
@@ -19,45 +18,61 @@ type SlingshotGame struct {
 	players []SlingshotPlayer
 	win     *pixelgl.Window
 	turn    int
-	txt     *text.Text
-	// cam := pixel.IM.Scaled(camPos, camZoom).Moved(win.Bounds().Center().Sub(c amPos))
+	cam     *SlingshotCamera
+	atlas   *text.Atlas
 }
 
 func (sg *SlingshotGame) Update() {
-	time.Sleep(1000 * time.Millisecond)
 	sg.draw()
-	//sg.getInput()
-	sg.turn = (sg.turn + 1) % len(sg.players)
+	sg.getInput()
+	time.Sleep(100 * time.Millisecond)
+
 }
 
 func (sg *SlingshotGame) getInput() {
-	sg.getGeneralInput()
-	sg.getInput()
-}
+	// Control the camera
+	dt := time.Since(sg.cam.last).Seconds()
+	sg.cam.last = time.Now()
 
-func (sg *SlingshotGame) getGeneralInput() {
-}
+	sg.cam.cam = pixel.IM.Scaled(sg.cam.camPos, sg.cam.camZoom).Moved(sg.win.Bounds().Center().Sub(sg.cam.camPos))
+	sg.win.SetMatrix(sg.cam.cam)
 
-func (sg *SlingshotGame) getUserInput() {
+	if sg.win.Pressed(pixelgl.KeyLeft) {
+		sg.cam.camPos.X -= sg.cam.camSpeed * dt
+	}
+	if sg.win.Pressed(pixelgl.KeyRight) {
+		sg.cam.camPos.X += sg.cam.camSpeed * dt
+	}
+	if sg.win.Pressed(pixelgl.KeyDown) {
+		sg.cam.camPos.Y -= sg.cam.camSpeed * dt
+	}
+	if sg.win.Pressed(pixelgl.KeyUp) {
+		sg.cam.camPos.Y += sg.cam.camSpeed * dt
+	}
+	sg.cam.camZoom *= math.Pow(sg.cam.camZoomSpeed, sg.win.MouseScroll().Y)
 
 	// Turn ship left
-	if sg.win.Pressed(pixelgl.KeyLeft) {
+	if sg.win.Pressed(pixelgl.Key1) {
 		sg.players[sg.turn].ship.angle += 10
 	}
 
 	// Turn ship right
-	if sg.win.Pressed(pixelgl.KeyRight) {
+	if sg.win.Pressed(pixelgl.Key2) {
 		sg.players[sg.turn].ship.angle -= 10
 	}
 
 	// More power
-	if sg.win.Pressed(pixelgl.KeyUp) {
+	if sg.win.Pressed(pixelgl.Key3) {
 		sg.players[sg.turn].ship.power += 10
 	}
 
 	//Less power
-	if sg.win.Pressed(pixelgl.KeyDown) {
+	if sg.win.Pressed(pixelgl.Key4) {
 		sg.players[sg.turn].ship.power -= 10
+	}
+
+	if sg.win.Pressed(pixelgl.KeySpace) {
+		sg.turn = (sg.turn + 1) % len(sg.players)
 	}
 }
 
@@ -69,9 +84,8 @@ func (sg *SlingshotGame) drawPicture(xPos, yPos, angle float64, path string) {
 
 	mat := pixel.IM
 	mat = mat.Moved((sg.win.Bounds().Min))
-	// mat = mat.Rotated(pic.Bounds().Center(), 360*angle/(math.Pi))
 	mat = mat.Moved(pixel.V(xPos, yPos))
-
+	mat = mat.Rotated(pixel.V(xPos, yPos), 360*angle/(math.Pi))
 	sprite := pixel.NewSprite(pic, pic.Bounds())
 	sprite.Draw(sg.win, mat)
 
@@ -119,12 +133,12 @@ func NewSlingshotGame(numPlanets, numPlayers, xSize, ySize int) *SlingshotGame {
 	}
 
 	atlas := text.NewAtlas(face, text.ASCII)
-	txt := text.New(pixel.V(50, 500), atlas)
 
 	var planets []Planet
 	var players []SlingshotPlayer
 
-	sg := &SlingshotGame{xSize, ySize, planets, players, win, 0, txt}
+	cam := NewSlingshotCamera()
+	sg := &SlingshotGame{xSize, ySize, planets, players, win, 0, cam, atlas}
 
 	// Add Planets
 	for i := 0; i < numPlanets; i++ {
@@ -168,7 +182,6 @@ func (sg SlingshotGame) draw() {
 // Draw the planets
 func (sg *SlingshotGame) drawPlanets() {
 	for _, v := range sg.planets {
-		fmt.Println("Drawing Planet at:" + FloatToString(v.xPos) + " " + FloatToString(v.yPos))
 		sg.drawPicture(v.xPos, v.yPos, 0, v.image)
 	}
 }
@@ -176,27 +189,23 @@ func (sg *SlingshotGame) drawPlanets() {
 // Draw the ships
 func (sg *SlingshotGame) drawShips() {
 	for _, v := range sg.players {
-		fmt.Println("Drawing Ship at:" + FloatToString(v.ship.xPos) + " " + FloatToString(v.ship.yPos))
 		sg.drawPicture(v.ship.xPos, v.ship.yPos, v.ship.angle, v.ship.image)
 	}
 }
 
 // Draw the players score
 func (sg SlingshotGame) drawScore() {
+	txt := text.New(pixel.V(50, 500), sg.atlas)
 
 	// Print Players info in respective color
 	for k, v := range sg.players {
 		if sg.turn == k {
-			sg.txt.Color = colornames.Red
+			txt.Color = colornames.Red
 		} else {
-			sg.txt.Color = colornames.Grey
+			txt.Color = colornames.Grey
 		}
-		sg.txt.WriteString("Payer: " + string(k+1) + ": " + string(v.score) + "\n")
+		txt.WriteString("Payer: " + string(k+1) + ": " + string(v.score) + "\n")
 	}
 
-	sg.txt.Draw(sg.win, pixel.IM.Moved(sg.win.Bounds().Max.Sub(sg.txt.Bounds().Max)))
-	for k, v := range sg.players {
-		//TODO display on screen, not on console
-		fmt.Println("Player " + string(k) + ": " + string(v.score) + "Points")
-	}
+	txt.Draw(sg.win, pixel.IM.Moved(sg.win.Bounds().Max.Sub(txt.Bounds().Max)))
 }
