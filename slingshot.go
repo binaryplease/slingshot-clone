@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
 	"github.com/faiface/pixel/text"
@@ -40,17 +41,22 @@ func (sg *SlingshotGame) getInput() {
 	sg.cam.cam = pixel.IM.Scaled(sg.cam.camPos, sg.cam.camZoom).Moved(sg.win.Bounds().Center().Sub(sg.cam.camPos))
 	sg.win.SetMatrix(sg.cam.cam)
 
-	if sg.win.Pressed(pixelgl.KeyLeft) {
-		sg.cam.camPos.X -= sg.cam.camSpeed * dt
-	}
-	if sg.win.Pressed(pixelgl.KeyRight) {
+	mouse := (sg.win.MousePosition())
+
+	if mouse.X+100 > float64(sg.xSize) {
 		sg.cam.camPos.X += sg.cam.camSpeed * dt
 	}
-	if sg.win.Pressed(pixelgl.KeyDown) {
-		sg.cam.camPos.Y -= sg.cam.camSpeed * dt
+
+	if mouse.X-100 < 0.0 {
+		sg.cam.camPos.X -= sg.cam.camSpeed * dt
 	}
-	if sg.win.Pressed(pixelgl.KeyUp) {
+
+	if mouse.Y+100 > float64(sg.ySize) {
 		sg.cam.camPos.Y += sg.cam.camSpeed * dt
+	}
+
+	if mouse.Y-100 < 0.0 {
+		sg.cam.camPos.Y -= sg.cam.camSpeed * dt
 	}
 
 	sg.cam.camZoom *= math.Pow(sg.cam.camZoomSpeed, sg.win.MouseScroll().Y)
