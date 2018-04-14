@@ -5,6 +5,8 @@ import (
 	"github.com/faiface/pixel/pixelgl"
 	"github.com/faiface/pixel/text"
 	"golang.org/x/image/colornames"
+	_ "image"
+	_ "image/jpeg"
 	"io/ioutil"
 	"math"
 	"math/rand"
@@ -12,20 +14,21 @@ import (
 )
 
 type SlingshotGame struct {
-	xSize   int
-	ySize   int
-	planets []Planet
-	players []SlingshotPlayer
-	win     *pixelgl.Window
-	turn    int
-	cam     *SlingshotCamera
-	atlas   *text.Atlas
+	xSize      int
+	ySize      int
+	planets    []Planet
+	players    []SlingshotPlayer
+	win        *pixelgl.Window
+	turn       int
+	cam        *SlingshotCamera
+	atlas      *text.Atlas
+	background string
 }
 
 func (sg *SlingshotGame) Update() {
 	sg.draw()
 	sg.getInput()
-	time.Sleep(100 * time.Millisecond)
+	// time.Sleep(100 * time.Millisecond)
 
 }
 
@@ -53,12 +56,12 @@ func (sg *SlingshotGame) getInput() {
 
 	// Turn ship left
 	if sg.win.Pressed(pixelgl.Key1) {
-		sg.players[sg.turn].ship.angle += 10
+		sg.players[sg.turn].ship.angle += math.Pi / 100
 	}
 
 	// Turn ship right
 	if sg.win.Pressed(pixelgl.Key2) {
-		sg.players[sg.turn].ship.angle -= 10
+		sg.players[sg.turn].ship.angle -= math.Pi / 100
 	}
 
 	// More power
@@ -73,6 +76,7 @@ func (sg *SlingshotGame) getInput() {
 
 	if sg.win.Pressed(pixelgl.KeySpace) {
 		sg.turn = (sg.turn + 1) % len(sg.players)
+		time.Sleep(100 * time.Millisecond)
 	}
 }
 
@@ -85,7 +89,7 @@ func (sg *SlingshotGame) drawPicture(xPos, yPos, angle float64, path string) {
 	mat := pixel.IM
 	mat = mat.Moved((sg.win.Bounds().Min))
 	mat = mat.Moved(pixel.V(xPos, yPos))
-	mat = mat.Rotated(pixel.V(xPos, yPos), 360*angle/(math.Pi))
+	mat = mat.Rotated(pixel.V(xPos, yPos), angle)
 	sprite := pixel.NewSprite(pic, pic.Bounds())
 	sprite.Draw(sg.win, mat)
 
@@ -93,9 +97,20 @@ func (sg *SlingshotGame) drawPicture(xPos, yPos, angle float64, path string) {
 
 func NewSlingshotGame(numPlanets, numPlayers, xSize, ySize int) *SlingshotGame {
 
+	//Load background images
+	var backgroundImages []string
+	files, err := ioutil.ReadDir("img/background")
+	if err != nil {
+		panic(err)
+	}
+
+	for _, f := range files {
+		backgroundImages = append(backgroundImages, "./img/background/"+f.Name())
+	}
+
 	//Load planet images
 	var planetImages []string
-	files, err := ioutil.ReadDir("img/planets")
+	files, err = ioutil.ReadDir("img/planets")
 	if err != nil {
 		panic(err)
 	}
@@ -138,7 +153,8 @@ func NewSlingshotGame(numPlanets, numPlayers, xSize, ySize int) *SlingshotGame {
 	var players []SlingshotPlayer
 
 	cam := NewSlingshotCamera()
-	sg := &SlingshotGame{xSize, ySize, planets, players, win, 0, cam, atlas}
+	background := backgroundImages[rand.Intn(len(backgroundImages))]
+	sg := &SlingshotGame{xSize, ySize, planets, players, win, 0, cam, atlas, background}
 
 	// Add Planets
 	for i := 0; i < numPlanets; i++ {
@@ -173,10 +189,36 @@ func (sg *SlingshotGame) addPlayer(xPos, yPos, angle float64, image string) {
 
 // Draw all images on the screen
 func (sg SlingshotGame) draw() {
-	sg.win.Clear(colornames.Blue)
+	sg.win.Clear(colornames.Black)
+	sg.drawBackground()
 	sg.drawPlanets()
 	sg.drawShips()
 	sg.drawScore()
+}
+
+func (sg *SlingshotGame) drawBackground() {
+
+	pic, err := loadPicture(sg.background)
+	if err != nil {
+		panic(err)
+	}
+
+	maxI := int((sg.win.Bounds().W()/pic.Bounds().W()+1)/sg.cam.camZoom) + 1
+	maxJ := int((sg.win.Bounds().H()/pic.Bounds().H()+1)/sg.cam.camZoom) + 1
+
+	for i := 0; i < maxI; i++ {
+		for j := 0; j < maxJ; j++ {
+
+			w := float64(i) * pic.Bounds().W()
+			h := float64(j) * pic.Bounds().H()
+			mat := pixel.IM
+			mat = mat.Moved(sg.cam.cam.Unproject(sg.win.Bounds().Min))
+			mat = mat.Moved(pixel.V(w, h))
+			sprite := pixel.NewSprite(pic, pic.Bounds())
+			sprite.Draw(sg.win, mat)
+		}
+
+	}
 }
 
 // Draw the planets
