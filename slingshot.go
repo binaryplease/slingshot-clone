@@ -52,8 +52,15 @@ func (sg *SlingshotGame) getInput() {
 	if sg.win.Pressed(pixelgl.KeyUp) {
 		sg.cam.camPos.Y += sg.cam.camSpeed * dt
 	}
-	sg.cam.camZoom *= math.Pow(sg.cam.camZoomSpeed, sg.win.MouseScroll().Y)
 
+	sg.cam.camZoom *= math.Pow(sg.cam.camZoomSpeed, sg.win.MouseScroll().Y)
+	if sg.cam.camZoom > sg.cam.camMaxZoom {
+		sg.cam.camZoom = sg.cam.camMaxZoom
+	}
+
+	if sg.cam.camZoom < sg.cam.camMinZoom {
+		sg.cam.camZoom = sg.cam.camMinZoom
+	}
 	// Turn ship left
 	if sg.win.Pressed(pixelgl.Key1) {
 		sg.players[sg.turn].ship.angle += math.Pi / 100
@@ -237,7 +244,7 @@ func (sg *SlingshotGame) drawShips() {
 
 // Draw the players score
 func (sg SlingshotGame) drawScore() {
-	txt := text.New(pixel.V(50, 500), sg.atlas)
+	txt := text.New(sg.cam.cam.Unproject(pixel.V(50, 500)), sg.atlas)
 
 	// Print Players info in respective color
 	for k, v := range sg.players {
@@ -249,5 +256,7 @@ func (sg SlingshotGame) drawScore() {
 		txt.WriteString("Payer: " + string(k+1) + ": " + string(v.score) + "\n")
 	}
 
-	txt.Draw(sg.win, pixel.IM.Moved(sg.win.Bounds().Max.Sub(txt.Bounds().Max)))
+	mat := pixel.IM
+	mat = mat.Moved(sg.cam.cam.Unproject(sg.win.Bounds().Min))
+	txt.Draw(sg.win, pixel.IM.Moved(sg.cam.cam.Unproject(sg.win.Bounds().Max).Sub(txt.Bounds().Max)))
 }
