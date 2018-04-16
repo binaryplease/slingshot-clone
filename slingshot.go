@@ -7,7 +7,6 @@ import (
 	"golang.org/x/image/colornames"
 	_ "image"
 	_ "image/jpeg"
-	"io/ioutil"
 	"math"
 	"math/rand"
 	"time"
@@ -23,6 +22,7 @@ type SlingshotGame struct {
 	cam        *SlingshotCamera
 	atlas      *text.Atlas
 	background string
+	toDraw     chan SpaceObject
 }
 
 func (sg *SlingshotGame) Update() {
@@ -92,55 +92,32 @@ func (sg *SlingshotGame) getInput() {
 	}
 }
 
-func (sg *SlingshotGame) drawPicture(xPos, yPos, angle float64, path string) {
+func (sg *SlingshotGame) drawPicture(pos pixel.Vec, angle float64, path string) {
+
 	pic, err := loadPicture(path)
 	if err != nil {
 		panic(err)
 	}
 
-	mat := pixel.IM
-	mat = mat.Moved((sg.win.Bounds().Min))
-	mat = mat.Moved(pixel.V(xPos, yPos))
-	mat = mat.Rotated(pixel.V(xPos, yPos), angle)
 	sprite := pixel.NewSprite(pic, pic.Bounds())
-	sprite.Draw(sg.win, mat)
 
+	sprite.Draw(sg.win, pixel.IM.Rotated(pos, angle).Moved(pos))
+
+}
+
+func (sg *SlingshotGame) drawChan() {
+	for {
+		spaceOb := <-sg.toDraw
+		sg.drawPicture(spaceOb.getPos(), spaceOb.getAngle(), spaceOb.getImage())
+	}
 }
 
 func NewSlingshotGame(numPlanets, numPlayers, xSize, ySize int) *SlingshotGame {
 
-	//Load background images
-	var backgroundImages []string
-	files, err := ioutil.ReadDir("img/background")
-	if err != nil {
-		panic(err)
-	}
-
-	for _, f := range files {
-		backgroundImages = append(backgroundImages, "./img/background/"+f.Name())
-	}
-
-	//Load planet images
-	var planetImages []string
-	files, err = ioutil.ReadDir("img/planets")
-	if err != nil {
-		panic(err)
-	}
-
-	for _, f := range files {
-		planetImages = append(planetImages, "./img/planets/"+f.Name())
-	}
-
-	//Load ship images
-	var shipImages []string
-	files, err = ioutil.ReadDir("img/ships")
-	if err != nil {
-		panic(err)
-	}
-
-	for _, f := range files {
-		shipImages = append(shipImages, "./img/ships/"+f.Name())
-	}
+	//Load images
+	backgroundImages := loadImageDir("./img/background")
+	planetImages := loadImageDir("./img/planets")
+	shipImages := loadImageDir("img/ships")
 
 	//Create window
 	cfg := pixelgl.WindowConfig{
@@ -166,35 +143,41 @@ func NewSlingshotGame(numPlanets, numPlayers, xSize, ySize int) *SlingshotGame {
 
 	cam := NewSlingshotCamera()
 	background := backgroundImages[rand.Intn(len(backgroundImages))]
-	sg := &SlingshotGame{xSize, ySize, planets, players, win, 0, cam, atlas, background}
+	toDraw := make(chan SpaceObject)
+	sg := &SlingshotGame{xSize, ySize, planets, players, win, 0, cam, atlas, background, toDraw}
+
+	go sg.drawChan()
 
 	// Add Planets
 	for i := 0; i < numPlanets; i++ {
 		xPos := rand.Float64() * float64(xSize)
 		yPos := rand.Float64() * float64(ySize)
+		pos := (pixel.V(xPos, yPos))
 		diam := rand.Float64() * float64(100)
-		sg.addPlanet(xPos, yPos, diam, planetImages[i%len(planetImages)])
+		sg.addPlanet(pos, diam, planetImages[i%len(planetImages)])
 	}
 
 	// Add Players
 	for i := 0; i < numPlayers; i++ {
 		xPos := rand.Float64() * float64(xSize)
 		yPos := rand.Float64() * float64(ySize)
-		sg.addPlayer(xPos, yPos, float64((90*i)%360), shipImages[i%len(shipImages)])
+
+		pos := pixel.V(xPos, yPos)
+		sg.addPlayer(pos, 0, shipImages[i%len(shipImages)])
 	}
 
 	return sg
 }
 
 // Add a planet to the game
-func (sg *SlingshotGame) addPlanet(xPos, yPos, diameter float64, image string) {
-	p := Planet{xPos, yPos, diameter, image}
+func (sg *SlingshotGame) addPlanet(pos pixel.Vec, diameter float64, image string) {
+	p := Planet{pos, 0, diameter, image}
 	sg.planets = append(sg.planets, p)
 }
 
 // Add a player to the game
-func (sg *SlingshotGame) addPlayer(xPos, yPos, angle float64, image string) {
-	ship := SpaceShip{xPos, yPos, angle, 10, image}
+func (sg *SlingshotGame) addPlayer(pos pixel.Vec, angle float64, image string) {
+	ship := SpaceShip{pos, angle, 10, 1, image}
 	player := SlingshotPlayer{ship, 0}
 	sg.players = append(sg.players, player)
 }
@@ -236,14 +219,14 @@ func (sg *SlingshotGame) drawBackground() {
 // Draw the planets
 func (sg *SlingshotGame) drawPlanets() {
 	for _, v := range sg.planets {
-		sg.drawPicture(v.xPos, v.yPos, 0, v.image)
+		sg.drawPicture(v.pos, v.angle, v.image)
 	}
 }
 
 // Draw the ships
 func (sg *SlingshotGame) drawShips() {
 	for _, v := range sg.players {
-		sg.drawPicture(v.ship.xPos, v.ship.yPos, v.ship.angle, v.ship.image)
+		sg.drawPicture(v.ship.pos, v.ship.angle, v.ship.image)
 	}
 }
 

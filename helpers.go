@@ -51,3 +51,17 @@ func loadTTF(path string, size float64) (font.Face, error) {
 		GlyphCacheEntries: 1,
 	}), nil
 }
+
+func loadImageDir(path string) []string {
+
+	var images []string
+	files, err := ioutil.ReadDir(path)
+	if err != nil {
+		panic(err)
+	}
+
+	for _, f := range files {
+		images = append(images, path+"/"+f.Name())
+	}
+	return images
+}
