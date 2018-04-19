@@ -5,15 +5,12 @@ import "github.com/faiface/pixel"
 type SpaceShip struct {
 	// pos   pixel.Matrix
 	// speed pixel.Vec
-	pos    pixel.Vec
-	angle  float64
+	SpaceObject
 	power  float64
 	weapon int
-	image  string
 }
 
-func (ss *SpaceShip) shoot() {
-	speed := pixel.V(0, 1)
-	shot := &Shot{ss.pos, speed, 5, "img/shots/shot1.png"}
-	shot.move()
+func (ss *SpaceShip) shoot() SpaceObject {
+	shot := Shot{NewSpaceObject(ss.pos, ss.angle, pixel.ZV, "img/shots/shot1.png"), 5}
+	return *shot.SpaceObject
 }
