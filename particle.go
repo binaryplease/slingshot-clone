@@ -21,7 +21,6 @@ type Shot struct {
 	timeout int
 }
 
-func (so *SpaceObject) update() SpaceObject {
+func (so *SpaceObject) update() {
 	so.pos = so.pos.Add(so.speed)
-	return *so
 }

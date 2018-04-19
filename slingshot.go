@@ -24,7 +24,7 @@ type SlingshotGame struct {
 	background string
 	toDraw     chan SpaceObject
 	fps        int
-	particles  []SpaceObject
+	particles  []*SpaceObject
 }
 
 func (sg *SlingshotGame) Update() {
@@ -90,7 +90,8 @@ func (sg *SlingshotGame) getInput() {
 
 	if sg.win.Pressed(pixelgl.KeySpace) {
 		so := sg.players[sg.turn].ship.shoot()
-		sg.particles = append(sg.particles, so)
+		tmp := append(sg.particles, &so)
+		sg.particles = tmp
 		sg.turn = (sg.turn + 1) % len(sg.players)
 		time.Sleep(100 * time.Millisecond)
 	}
@@ -99,7 +100,7 @@ func (sg *SlingshotGame) getInput() {
 func (sg *SlingshotGame) drawParticles() {
 	for _, v := range sg.particles {
 		//TODO remove after timeout
-		sg.toDraw <- v
+		sg.toDraw <- *v
 	}
 }
 func (sg *SlingshotGame) drawChan() {
@@ -107,7 +108,7 @@ func (sg *SlingshotGame) drawChan() {
 		so := <-sg.toDraw
 		so.update()
 		for _, v := range sg.particles {
-			v = v.update()
+			v.update()
 		}
 		pic, err := loadPicture(so.image)
 		if err != nil {
@@ -150,7 +151,7 @@ func NewSlingshotGame(numPlanets, numPlayers, xSize, ySize int) *SlingshotGame {
 
 	var planets []Planet
 	var players []SlingshotPlayer
-	var particles []SpaceObject
+	var particles []*SpaceObject
 
 	cam := NewSlingshotCamera()
 	background := backgroundImages[rand.Intn(len(backgroundImages))]

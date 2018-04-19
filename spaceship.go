@@ -11,6 +11,6 @@ type SpaceShip struct {
 }
 
 func (ss *SpaceShip) shoot() SpaceObject {
-	shot := Shot{NewSpaceObject(ss.pos, ss.angle, pixel.ZV, "img/shots/shot1.png"), 5}
+	shot := Shot{NewSpaceObject(ss.pos, ss.angle, pixel.V(9, 0), "img/shots/shot1.png"), 5}
 	return *shot.SpaceObject
 }
