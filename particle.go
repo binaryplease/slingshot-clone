@@ -22,5 +22,6 @@ type Shot struct {
 }
 
 func (so *SpaceObject) update() {
-	so.pos = so.pos.Add(so.speed)
+
+	so.pos = so.pos.Add(so.speed.Rotated(so.angle))
 }
