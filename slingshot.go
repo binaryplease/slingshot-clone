@@ -22,13 +22,16 @@ type SlingshotGame struct {
 	cam        *SlingshotCamera
 	atlas      *text.Atlas
 	background string
-	toDraw     chan SpaceObject
 	fps        int
 	particles  []*SpaceObject
 }
 
 func (sg *SlingshotGame) Update() {
 	sg.getInput()
+
+	for _, v := range sg.particles {
+		v.update()
+	}
 	sg.draw()
 
 }
@@ -96,29 +99,6 @@ func (sg *SlingshotGame) getInput() {
 	}
 }
 
-func (sg *SlingshotGame) drawParticles() {
-	for _, v := range sg.particles {
-		//TODO remove after timeout
-		sg.toDraw <- *v
-	}
-}
-func (sg *SlingshotGame) drawChan() {
-	for {
-		so := <-sg.toDraw
-		so.update()
-		for _, v := range sg.particles {
-			v.update()
-		}
-		pic, err := loadPicture(so.image)
-		if err != nil {
-			panic(err)
-		}
-
-		sprite := pixel.NewSprite(pic, pic.Bounds())
-		sprite.Draw(sg.win, pixel.IM.Moved(so.pos).Rotated(so.pos, so.angle))
-	}
-}
-
 func NewSlingshotGame(numPlanets, numPlayers, xSize, ySize int) *SlingshotGame {
 
 	// Pseudo random init
@@ -154,10 +134,7 @@ func NewSlingshotGame(numPlanets, numPlayers, xSize, ySize int) *SlingshotGame {
 
 	cam := NewSlingshotCamera()
 	background := backgroundImages[rand.Intn(len(backgroundImages))]
-	toDraw := make(chan SpaceObject)
-	sg := &SlingshotGame{xSize, ySize, planets, players, win, 0, cam, atlas, background, toDraw, 60, particles}
-
-	go sg.drawChan()
+	sg := &SlingshotGame{xSize, ySize, planets, players, win, 0, cam, atlas, background, 60, particles}
 
 	// Add Planets
 	for i := 0; i < numPlanets; i++ {
@@ -195,13 +172,38 @@ func (sg *SlingshotGame) addPlayer(pos pixel.Vec, angle float64, image string) {
 
 // Draw all images on the screen
 func (sg SlingshotGame) draw() {
+
+	//Clear screen and draw background
 	sg.win.Clear(colornames.Black)
 	sg.drawBackground()
-	sg.drawPlanets()
-	sg.drawShips()
+
+	// Draw planets
+	for _, v := range sg.planets {
+		sg.drawSpaceObject(v.SpaceObject)
+	}
+
+	// Draw ships
+	for _, v := range sg.players {
+		sg.drawSpaceObject(v.ship.SpaceObject)
+	}
+
+	//Draw particles
+	for _, v := range sg.particles {
+		//TODO remove after timeout
+		sg.drawSpaceObject(*v)
+	}
 	sg.drawScore()
-	sg.drawParticles()
-	// time.Sleep(time.Second / time.Duration(sg.fps))
+}
+
+func (sg SlingshotGame) drawSpaceObject(so SpaceObject) {
+
+	pic, err := loadPicture(so.image)
+	if err != nil {
+		panic(err)
+	}
+
+	sprite := pixel.NewSprite(pic, pic.Bounds())
+	sprite.Draw(sg.win, pixel.IM.Moved(so.pos).Rotated(so.pos, so.angle))
 }
 
 func (sg *SlingshotGame) drawBackground() {
@@ -226,20 +228,6 @@ func (sg *SlingshotGame) drawBackground() {
 			sprite.Draw(sg.win, mat)
 		}
 
-	}
-}
-
-// Draw the planets
-func (sg *SlingshotGame) drawPlanets() {
-	for _, v := range sg.planets {
-		sg.toDraw <- v.SpaceObject
-	}
-}
-
-// Draw the ships
-func (sg *SlingshotGame) drawShips() {
-	for _, v := range sg.players {
-		sg.toDraw <- v.ship.SpaceObject
 	}
 }
 
