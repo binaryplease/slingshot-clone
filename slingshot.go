@@ -28,9 +28,8 @@ type SlingshotGame struct {
 }
 
 func (sg *SlingshotGame) Update() {
-	sg.draw()
 	sg.getInput()
-	// time.Sleep(100 * time.Millisecond)
+	sg.draw()
 
 }
 
@@ -93,7 +92,7 @@ func (sg *SlingshotGame) getInput() {
 		tmp := append(sg.particles, &so)
 		sg.particles = tmp
 		sg.turn = (sg.turn + 1) % len(sg.players)
-		time.Sleep(100 * time.Millisecond)
+		// time.Sleep(100 * time.Millisecond)
 	}
 }
 
@@ -134,7 +133,7 @@ func NewSlingshotGame(numPlanets, numPlayers, xSize, ySize int) *SlingshotGame {
 	cfg := pixelgl.WindowConfig{
 		Title:  "Slingshot",
 		Bounds: pixel.R(0, 0, 1024, 768),
-		VSync:  true,
+		// VSync:  true,
 	}
 	win, err := pixelgl.NewWindow(cfg)
 	if err != nil {
@@ -202,7 +201,7 @@ func (sg SlingshotGame) draw() {
 	sg.drawShips()
 	sg.drawScore()
 	sg.drawParticles()
-	time.Sleep(time.Second / time.Duration(sg.fps))
+	// time.Sleep(time.Second / time.Duration(sg.fps))
 }
 
 func (sg *SlingshotGame) drawBackground() {
