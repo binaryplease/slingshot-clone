@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
 	"github.com/faiface/pixel/text"
@@ -24,6 +25,7 @@ type SlingshotGame struct {
 	background string
 	fps        int
 	particles  []*SpaceObject
+	started    bool
 }
 
 func (sg *SlingshotGame) Update() {
@@ -45,6 +47,8 @@ func (sg *SlingshotGame) getInput() {
 	sg.win.SetMatrix(sg.cam.cam)
 
 	mouse := (sg.win.MousePosition())
+	fmt.Println("X " + FloatToString(sg.cam.camPos.X))
+	fmt.Println("Y " + FloatToString(sg.cam.camPos.Y))
 
 	if mouse.X+100 > float64(sg.xSize) {
 		sg.cam.camPos.X += sg.cam.camSpeed * dt
@@ -134,7 +138,7 @@ func NewSlingshotGame(numPlanets, numPlayers, xSize, ySize int) *SlingshotGame {
 
 	cam := NewSlingshotCamera()
 	background := backgroundImages[rand.Intn(len(backgroundImages))]
-	sg := &SlingshotGame{xSize, ySize, planets, players, win, 0, cam, atlas, background, 60, particles}
+	sg := &SlingshotGame{xSize, ySize, planets, players, win, 0, cam, atlas, background, 60, particles, false}
 
 	// Add Planets
 	for i := 0; i < numPlanets; i++ {
