@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
 	"github.com/faiface/pixel/text"
@@ -40,29 +39,26 @@ func (sg *SlingshotGame) Update() {
 
 func (sg *SlingshotGame) getInput() {
 	// Control the camera
+
+	mouse := (sg.win.MousePosition())
 	dt := time.Since(sg.cam.last).Seconds()
 	sg.cam.last = time.Now()
-
 	sg.cam.cam = pixel.IM.Scaled(sg.cam.camPos, sg.cam.camZoom).Moved(sg.win.Bounds().Center().Sub(sg.cam.camPos))
 	sg.win.SetMatrix(sg.cam.cam)
 
-	mouse := (sg.win.MousePosition())
-	fmt.Println("X " + FloatToString(sg.cam.camPos.X))
-	fmt.Println("Y " + FloatToString(sg.cam.camPos.Y))
-
-	if mouse.X+100 > float64(sg.xSize) {
+	if mouse.X+100 > float64(sg.xSize) && mouse.X != 0 {
 		sg.cam.camPos.X += sg.cam.camSpeed * dt
 	}
 
-	if mouse.X-100 < 0.0 {
+	if mouse.X-100 < 0.0 && mouse.X != 0 {
 		sg.cam.camPos.X -= sg.cam.camSpeed * dt
 	}
 
-	if mouse.Y+100 > float64(sg.ySize) {
+	if mouse.Y+100 > float64(sg.ySize) && mouse.Y != 0 {
 		sg.cam.camPos.Y += sg.cam.camSpeed * dt
 	}
 
-	if mouse.Y-100 < 0.0 {
+	if mouse.Y-100 < 0.0 && mouse.Y != 0 {
 		sg.cam.camPos.Y -= sg.cam.camSpeed * dt
 	}
 
@@ -74,6 +70,7 @@ func (sg *SlingshotGame) getInput() {
 	if sg.cam.camZoom < sg.cam.camMinZoom {
 		sg.cam.camZoom = sg.cam.camMinZoom
 	}
+
 	// Turn ship left
 	if sg.win.Pressed(pixelgl.Key1) {
 		sg.players[sg.turn].ship.angle += math.Pi / 100
